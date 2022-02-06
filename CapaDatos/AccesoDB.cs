@@ -5,54 +5,64 @@ using System.Data;
 using System.Data.OleDb;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SalvarDatos.CapaDatos
 {
     class AccesoDB
     {
-        private string stringConnection, hoy, ConsulTotalDiario;
-        private OleDbConnection _con { get; set; }
-        private OleDbCommand _cmd { get; set; }
-        private OleDbDataAdapter _ad { get; set; }
-        private DataSet _DiarioDataSet = new DataSet();
+        private readonly string stringConnection, hoy, ConsulTotalDiario, stringConnSave;
+        private OleDbConnection Con { get; set; }
+        private OleDbCommand Cmd { get; set; }
+        private OleDbDataAdapter Ad { get; set; }
+        private readonly DataSet _DiarioDataSet = new();
 
 
-        public AccesoDB(Entidad En)
-        {
-            stringConnection = "Provider=Microsoft.Jet.OLEDB.4.0; Data Source= C:/ProgramData/Tecnausa/Gran Bolsa ; Jet OLEDB:Database Password = N68H98A30";
-            GetConection(En);
+        public AccesoDB()
+        {  
             hoy = DateTime.Now.ToString("yyyy-MM-dd");
             ConsulTotalDiario = $"SELECT SUM(Entradas)-SUM(Salidas) AS TOTAL FROM JugadasHora  WHERE Format(modificado,'yyyy-MM-dd HH:nn:ss') >= Format('{hoy} 00:00:00','yyyy-MM-dd HH:nn:ss')";
         }
 
-        private void GetConection(Entidad En)
+        public void GetConection(Entidad En, string stringConnection)
         {
             try
             {
-                _con = new OleDbConnection(stringConnection);
-                if (_con.State == ConnectionState.Closed)
-                    _con.Open();
-                if (_con.State == ConnectionState.Open)
-                    En._ErrorCode = 0;
+                Con = new OleDbConnection(stringConnection);
+                if (Con.State == ConnectionState.Closed)
+                    Con.Open();
+                if (Con.State == ConnectionState.Open)
+                    En.ErrorCode = 0;
                 else
                 {
-                    En._ErrorCode = 999;
-                    En._ErrorMsg = "Login Fail";
+                    En.ErrorCode = 999;
+                    En.ErrorMsg = "Login Fail";
                 }
             }
             catch (Exception ex)
             {
-                En._ErrorCode = ex.HResult;
-                En._ErrorMsg = ex.Message;
+                En.ErrorCode = ex.HResult;
+                En.ErrorMsg = ex.Message;
             }
         }
         public void getDiario(Entidad En)
         {
-            _cmd = new OleDbCommand(ConsulTotalDiario, _con);
-            _ad = new OleDbDataAdapter(_cmd);
-            _ad.Fill(_DiarioDataSet, "Diario");
-            En._TotalDiario = _DiarioDataSet.Tables["Diario"].Rows[0].IsNull(0) ? "0,0" : _DiarioDataSet.Tables["Diario"].Rows[0]["TOTAL"].ToString();
+            Cmd = new OleDbCommand(ConsulTotalDiario, Con);
+            Ad = new OleDbDataAdapter(Cmd);
+            Ad.Fill(_DiarioDataSet, "Diario");
+            En.TotalDiario = _DiarioDataSet.Tables["Diario"].Rows[0].IsNull(0) ? "0,0" : _DiarioDataSet.Tables["Diario"].Rows[0]["TOTAL"].ToString();
+            Thread.Sleep(6000);
+        }
+
+        public void InserData(Entidad En)
+        {
+            DateTime doy = DateTime.Now;
+            string insertSql = $"INSERT INTO Diario (Fecha,Total) VALUES('{doy}','{En.TotalDiario}')";
+            Cmd = new OleDbCommand(insertSql, Con);
+            var gg = Cmd.ExecuteNonQuery();
+            Thread.Sleep(6000);
+
         }
     }
 }

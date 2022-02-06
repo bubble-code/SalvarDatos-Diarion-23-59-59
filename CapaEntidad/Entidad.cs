@@ -9,9 +9,9 @@ namespace SalvarDatos.CapaEntidad
 {
     class Entidad
     {
-        public int _ErrorCode { get; set; }
-        public string _ErrorMsg { get; set; }
-        public string _TotalDiario { get; set; }
+        public int ErrorCode { get; set; }
+        public string ErrorMsg { get; set; }
+        public string TotalDiario { get; set; }
         public DataTable curr = new();
     }
 }
